@@ -15,6 +15,7 @@ CONSECTUTIVE_FAILURE_LIMIT = 200
 
 def main():
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+    error_log = create_error_log()
 
     request_count = 1
     errString = ""
@@ -42,10 +43,10 @@ def main():
             consecutive_failures = 0
 
         except Exception as error:
-            errString += f"{targetted_url} failed; {error}\n"
+            error_log.write(f"{targetted_url} failed; {error}\n")
             consecutive_failures += 1
 
-    write_error_log(errString)
+    error_log.close()
 
 
 def get_stock_name(soup):
@@ -72,8 +73,11 @@ def get_returns(table):
         # skip table header
         if count == 0:
             continue
-        # additional error checking needed
-        row_spans = table_row.find_all("span")
+
+        row_spans = table_row.find_all("span", style="font-family: Times New Roman;")
+        if len(row_spans) != 5:
+            raise Exception(f"{DEFAULT_ERR_TEXT}; unexpected number of spans found in returns table row")
+
         returns.append([row_spans[0].text, row_spans[4].text])
 
     if returns == []:
@@ -106,11 +110,10 @@ def write_file(file_name, text):
         file.write(text)
 
 
-def write_error_log(text):
+def create_error_log():
     working_dir = os.path.dirname(os.path.realpath(__file__))
     output_path = os.path.join(working_dir, ERR_LOG_FILE_NAME)
-    with open(output_path, "w") as file:
-        file.write(text)
+    return open(output_path, "w")
 
 
 if __name__ == "__main__":
