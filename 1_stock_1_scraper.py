@@ -12,6 +12,7 @@ DEFAULT_ERR_TEXT = "page does not match stock history format"
 
 CONSECTUTIVE_FAILURE_LIMIT = 200
 
+
 def main():
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
@@ -39,19 +40,18 @@ def main():
             errString += f"{targetted_url} failed; {error}\n"
             consecutive_failures += 1
 
-        if request_count > 120: 
-            break
-
     write_error_log(errString)
+
 
 def get_stock_name(soup):
     title_indicator = " Yearly Returns"
     raw_title = soup.find(text=re.compile(title_indicator))
-    if raw_title == None:
+    if raw_title is None:
         raise Exception(f"{DEFAULT_ERR_TEXT}; `Yearly Returns` not found")
 
     raw_stock_name = raw_title[:raw_title.find(title_indicator)]
     return raw_stock_name.strip()
+
 
 def get_returns_table(soup):
     for table_element in soup.find_all("table"):
@@ -59,6 +59,7 @@ def get_returns_table(soup):
             return table_element
 
     raise Exception(f"{DEFAULT_ERR_TEXT}; returns table not found")
+
 
 def get_returns(table):
     returns = []
@@ -72,15 +73,17 @@ def get_returns(table):
 
     if returns == []:
         raise Exception(f"{DEFAULT_ERR_TEXT}; no rows found in returns table")
-    
+
     return returns
+
 
 def parse_returns(returns):
     parsed = ""
     for value in returns:
         parsed += f"{value[0]} {value[1]}\n"
-    
+
     return parsed
+
 
 def create_file_name(text):
     invalid_chars = ["\\", "/", ":", "*", "?", "/", "<", ">", "|"]
@@ -90,11 +93,13 @@ def create_file_name(text):
         cleaned_text = cleaned_text.replace(invalid_char, " ")
     return f"{cleaned_text}.txt"
 
+
 def write_file(file_name, text):
     working_dir = os.path.dirname(os.path.realpath(__file__))
     output_path = os.path.join(working_dir, OUTPUT_FOLDER, file_name)
     with open(output_path, "w") as file:
         file.write(text)
+
 
 def write_error_log(text):
     working_dir = os.path.dirname(os.path.realpath(__file__))
