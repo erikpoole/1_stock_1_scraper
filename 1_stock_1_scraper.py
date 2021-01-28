@@ -21,7 +21,12 @@ def main():
     consecutive_failures = 0
     while consecutive_failures < CONSECTUTIVE_FAILURE_LIMIT:
         targetted_url = f"{BASE_URL}/1stock1_{request_count}.htm"
+
+        if request_count % 100 == 1:
+            print(f"requesting and parsing {targetted_url}")
+
         request_count += 1
+
         try:
             raw_page = requests.get(targetted_url)
             soup = BeautifulSoup(raw_page.content, "html.parser")
@@ -106,6 +111,7 @@ def write_error_log(text):
     output_path = os.path.join(working_dir, ERR_LOG_FILE_NAME)
     with open(output_path, "w") as file:
         file.write(text)
+
 
 if __name__ == "__main__":
     main()
