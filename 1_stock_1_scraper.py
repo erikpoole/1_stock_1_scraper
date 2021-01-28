@@ -6,17 +6,21 @@ import sys
 
 BASE_URL = "http://www.1stock1.com"
 OUTPUT_FOLDER = "output"
+ERR_LOG_FILE_NAME = "errors.txt"
+
+DEFAULT_ERR_TEXT = "page does not match stock history format"
 
 CONSECTUTIVE_FAILURE_LIMIT = 200
 
 def main():
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-    count = 1
+    request_count = 1
+    errString = ""
     consecutive_failures = 0
     while consecutive_failures < CONSECTUTIVE_FAILURE_LIMIT:
-        targetted_url = f"{BASE_URL}/1stock1_2582.htm"
-        count += 1
+        targetted_url = f"{BASE_URL}/1stock1_{request_count}.htm"
+        request_count += 1
         try:
             raw_page = requests.get(targetted_url)
             soup = BeautifulSoup(raw_page.content, "html.parser")
@@ -28,20 +32,23 @@ def main():
             returns = get_returns(returns_table)
             output_text = parse_returns(returns)
 
-            create_file(file_name, output_text)
+            write_file(file_name, output_text)
             consecutive_failures = 0
 
         except Exception as error:
-            print(f"{targetted_url} failed; {error}")
+            errString += f"{targetted_url} failed; {error}\n"
             consecutive_failures += 1
 
-        break
+        if request_count > 120: 
+            break
+
+    write_error_log(errString)
 
 def get_stock_name(soup):
     title_indicator = " Yearly Returns"
     raw_title = soup.find(text=re.compile(title_indicator))
     if raw_title == None:
-        raise Exception("page does not match stock history format")
+        raise Exception(f"{DEFAULT_ERR_TEXT}; `Yearly Returns` not found")
 
     raw_stock_name = raw_title[:raw_title.find(title_indicator)]
     return raw_stock_name.strip()
@@ -50,6 +57,8 @@ def get_returns_table(soup):
     for table_element in soup.find_all("table"):
         if table_element.parent.name == "div":
             return table_element
+
+    raise Exception(f"{DEFAULT_ERR_TEXT}; returns table not found")
 
 def get_returns(table):
     returns = []
@@ -60,6 +69,9 @@ def get_returns(table):
         # additional error checking needed
         row_spans = table_row.find_all("span")
         returns.append([row_spans[0].text, row_spans[4].text])
+
+    if returns == []:
+        raise Exception(f"{DEFAULT_ERR_TEXT}; no rows found in returns table")
     
     return returns
 
@@ -78,12 +90,17 @@ def create_file_name(text):
         cleaned_text = cleaned_text.replace(invalid_char, " ")
     return f"{cleaned_text}.txt"
 
-def create_file(file_name, text):
+def write_file(file_name, text):
     working_dir = os.path.dirname(os.path.realpath(__file__))
     output_path = os.path.join(working_dir, OUTPUT_FOLDER, file_name)
     with open(output_path, "w") as file:
         file.write(text)
 
+def write_error_log(text):
+    working_dir = os.path.dirname(os.path.realpath(__file__))
+    output_path = os.path.join(working_dir, ERR_LOG_FILE_NAME)
+    with open(output_path, "w") as file:
+        file.write(text)
 
 if __name__ == "__main__":
     main()
