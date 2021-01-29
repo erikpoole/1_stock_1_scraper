@@ -53,7 +53,8 @@ def get_stock_name(soup):
     title_indicator = " Yearly Returns"
     raw_title = soup.find(text=re.compile(title_indicator))
     if raw_title is None:
-        raise Exception(f"{DEFAULT_ERR_TEXT}; `Yearly Returns` not found")
+        raise Exception(f"{DEFAULT_ERR_TEXT}; "
+                        "`Yearly Returns` not found")
 
     raw_stock_name = raw_title[:raw_title.find(title_indicator)]
     return raw_stock_name.strip()
@@ -64,7 +65,8 @@ def get_returns_table(soup):
         if table_element.parent.name == "div":
             return table_element
 
-    raise Exception(f"{DEFAULT_ERR_TEXT}; returns table not found")
+    raise Exception(f"{DEFAULT_ERR_TEXT}; "
+                    "returns table not found")
 
 
 def get_returns(table):
@@ -74,23 +76,29 @@ def get_returns(table):
 
         if len(table_cells) != 5:
             if row_number == 0:
-                raise Exception(f"{DEFAULT_ERR_TEXT}; unexpected number of columns found in returns table row")
+                raise Exception(f"{DEFAULT_ERR_TEXT}; "
+                                "unexpected number of columns "
+                                "found in returns table row")
 
             continue
 
         if row_number == 0:
-            if not "Year" in table_cells[0].text:
-                raise Exception(f"{DEFAULT_ERR_TEXT}; table does not include `Year` column")
+            if "Year" not in table_cells[0].text:
+                raise Exception(f"{DEFAULT_ERR_TEXT}; "
+                                "table does not include `Year` column")
 
-            if not "Percent Gain or Loss" in table_cells[4].text:
-                raise Exception(f"{DEFAULT_ERR_TEXT}; table does not include `Percent Gain or Loss` column")
+            if "Percent Gain or Loss" not in table_cells[4].text:
+                raise Exception(f"{DEFAULT_ERR_TEXT}; "
+                                "table does not include "
+                                "`Percent Gain or Loss` column")
 
             continue
 
         returns.append([table_cells[0].text, table_cells[4].text])
 
     if returns == []:
-        raise Exception(f"{DEFAULT_ERR_TEXT}; no rows found in returns table")
+        raise Exception(f"{DEFAULT_ERR_TEXT}; "
+                        "no rows found in returns table")
 
     return returns
 
