@@ -69,16 +69,25 @@ def get_returns_table(soup):
 
 def get_returns(table):
     returns = []
-    for count, table_row in enumerate(table.find_all("tr")):
-        # skip table header
-        if count == 0:
+    for row_number, table_row in enumerate(table.find_all("tr")):
+        table_cells = table_row.find_all("td")
+
+        if len(table_cells) != 5:
+            if row_number == 0:
+                raise Exception(f"{DEFAULT_ERR_TEXT}; unexpected number of columns found in returns table row")
+
             continue
 
-        row_spans = table_row.find_all("span", style="font-family: Times New Roman;")
-        if len(row_spans) != 5:
-            raise Exception(f"{DEFAULT_ERR_TEXT}; unexpected number of spans found in returns table row")
+        if row_number == 0:
+            if not "Year" in table_cells[0].text:
+                raise Exception(f"{DEFAULT_ERR_TEXT}; table does not include `Year` column")
 
-        returns.append([row_spans[0].text, row_spans[4].text])
+            if not "Percent Gain or Loss" in table_cells[4].text:
+                raise Exception(f"{DEFAULT_ERR_TEXT}; table does not include `Percent Gain or Loss` column")
+
+            continue
+
+        returns.append([table_cells[0].text, table_cells[4].text])
 
     if returns == []:
         raise Exception(f"{DEFAULT_ERR_TEXT}; no rows found in returns table")
@@ -89,7 +98,7 @@ def get_returns(table):
 def parse_returns(returns):
     parsed = ""
     for value in returns:
-        parsed += f"{value[0]} {value[1]}\n"
+        parsed += f"{value[0].strip()} {value[1].strip()}\n"
 
     return parsed
 
